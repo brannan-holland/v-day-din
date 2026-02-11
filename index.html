@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0F0E0C" />
+  <title>Valentine's Dinner for Two</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #0F0E0C; overflow-x: hidden; }
+    ::-webkit-scrollbar { display: none; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const PHASES = [
+      {
+        id: "arrival",
+        title: "Arrival",
+        subtitle: "Set the stage",
+        time: "~1.5 hrs before dinner",
+        icon: "\u{1F3E0}",
+        steps: [
+          { text: "Put possets in her fridge", her: null },
+          { text: "Put cod in her fridge", her: null },
+          { text: "Set up your station \u2014 knife, board, ingredients organized", her: "Pour two glasses of Dassai 45" },
+          { text: "Light candles", her: null },
+        ],
+      },
+      {
+        id: "dashi",
+        title: "Dashi",
+        subtitle: "The foundation",
+        time: "60 min before serving",
+        icon: "\u{1F375}",
+        steps: [
+          { text: "Place kombu in pot with 5 cups cold water", her: null },
+          { text: "Set over medium heat \u2014 explain to her what the kombu is doing", her: "Watch together. Explain how the bubbles will tell you when it\u2019s ready." },
+          { text: "While kombu heats, prep soup garnishes \u2014 cut yuzu peel (no pith), pick mitsuba sprigs", her: null },
+          {
+            text: "Pull the kombu \u2014 look for small bubbles on the surface and around the pot edges (~160-170\u00B0F)",
+            her: "She pulls the kombu out. Describe what to look for. She makes the call. This is her moment.",
+            important: true,
+          },
+          { text: "Bring water to a full boil, then kill the heat", her: null },
+          {
+            text: "Add katsuobushi all at once \u2014 don\u2019t stir. Steep 45 seconds to 1 minute.",
+            her: "She adds the katsuobushi. Let her hold the bag and scatter the flakes. Watch them bloom and sink together.",
+            timer: 60,
+          },
+          {
+            text: "Strain through cheesecloth \u2014 let gravity work, don\u2019t squeeze",
+            her: "First taste together. Hand her a spoon. Watch her reaction to what you just built from two ingredients.",
+            important: true,
+          },
+          { text: "Reserve 2 cups for soup, 2 cups for rice", her: null },
+        ],
+      },
+      {
+        id: "rice-prep",
+        title: "Rice & Prep",
+        subtitle: "Building momentum",
+        time: "45 min before serving",
+        icon: "\u{1F35A}",
+        steps: [
+          {
+            text: "Start dashi rice \u2014 combine washed rice + 1.75\u20132 cups reserved dashi in pot. Bring to boil, reduce to lowest heat, cover.",
+            timer: 900,
+            timerLabel: "Rice cooking (15 min)",
+            her: null,
+          },
+          { text: "After 15 min, turn off heat. Rest 10 min covered. Do NOT lift lid.", timer: 600, timerLabel: "Rice resting (10 min)", her: null },
+          {
+            text: "Season 2 cups dashi for soup: 1 tsp usukuchi soy, \u00BD tsp salt, 1 tsp sake. Taste \u2014 umami-forward, not salty.",
+            her: "She slices the cucumber for quick pickle \u2014 thin rounds. Toss with 2 tbsp rice vinegar, 1 tsp sugar, \u00BD tsp salt, pinch chili.",
+          },
+        ],
+      },
+      {
+        id: "broiler-prep",
+        title: "Broiler Prep",
+        subtitle: "Getting ready",
+        time: "30 min before serving",
+        icon: "\u{1F525}",
+        steps: [
+          { text: "Preheat broiler to high. Rack 6\u20138 inches from element.", her: null },
+          {
+            text: "Remove cod from marinade. Gently wipe excess miso \u2014 leave a thin coating, remove clumps. Line sheet with foil, place cod skin-side down.",
+            her: "She preps the broccolini \u2014 toss with 1 tbsp oil and a pinch of salt in a bowl.",
+          },
+        ],
+      },
+      {
+        id: "soup",
+        title: "Course 1",
+        subtitle: "Suimono \u2014 Clear Dashi Soup",
+        time: "15 min before serving",
+        icon: "\u{1F962}",
+        course: 1,
+        steps: [
+          { text: "Thread toothpicks through shrimp to keep them straight", her: null },
+          {
+            text: "Gently reheat seasoned dashi to just below simmering. Poach shrimp 1\u20132 minutes until just pink.",
+            timer: 120,
+            timerLabel: "Shrimp poaching",
+            her: null,
+          },
+          { text: "Remove toothpicks from shrimp", her: null },
+          { text: "Warm two bowls (run under hot water or microwave briefly)", her: null },
+          {
+            text: "Plate together \u2014 you ladle broth",
+            her: "She places the garnishes \u2014 shrimp, mitsuba, carrot flower. You ladle broth gently around her arrangement.",
+            important: true,
+          },
+          {
+            text: "Float yuzu peel on the surface. Slap it between your palms first to release oils.",
+            her: "She floats the yuzu peel \u2014 the finishing touch.",
+          },
+          {
+            text: "Cover with lids if you have them. Carry bowls to the table together.",
+            her: "She lifts the lid. Steam and aroma. This is the moment.",
+            important: true,
+          },
+          { text: "Sit. Sip Dassai 45. Take your time. No rush.", her: null },
+        ],
+      },
+      {
+        id: "main",
+        title: "Course 2",
+        subtitle: "Saikyo Miso Black Cod",
+        time: "After soup, when ready",
+        icon: "\u{1F41F}",
+        course: 2,
+        steps: [
+          {
+            text: "Slide cod under the broiler. Watch carefully \u2014 8\u201312 minutes.",
+            timer: 600,
+            timerLabel: "Cod broiling (~10 min)",
+            her: null,
+            important: true,
+          },
+          { text: "Look for: deep burnished amber glaze, almost charred edges but not blackened. Fish opaque and flaky when pressed.", her: null },
+          { text: "If top caramelizes too fast and fish isn\u2019t done, move rack down or switch to 400\u00B0F to finish.", her: null },
+          {
+            text: "While cod broils \u2014 heat cast iron screaming hot for broccolini",
+            her: "She lays the broccolini in the pan \u2014 flat side down, one by one. Tell her: \u2018don\u2019t touch them, let them char.\u2019",
+          },
+          {
+            text: "Char broccolini 2\u20133 min per side until blackened in spots, tender-crisp",
+            her: "She flips the broccolini and does the final toss \u2014 1 tbsp soy, 1 tsp sesame oil, 1 tsp mirin.",
+          },
+          { text: "Fluff the dashi rice with a paddle", her: null },
+          {
+            text: "Plate: rice slightly off-center, cod leaning against it (crust up), broccolini alongside",
+            her: "She plates the broccolini and pickled cucumber alongside. Finish cucumber with sesame seeds.",
+          },
+          { text: "Switch to Suigei sake", her: null },
+        ],
+      },
+      {
+        id: "dessert",
+        title: "Course 3",
+        subtitle: "Yuzu Posset",
+        time: "After main, when ready",
+        icon: "\u{1F34B}",
+        course: 3,
+        steps: [
+          { text: "Pull possets from fridge", her: null },
+          {
+            text: "Garnish together",
+            her: "She places the candied yuzu zest on each posset \u2014 a quiet, gentle moment after the energy of the main course.",
+            important: true,
+          },
+          { text: "Optional: thin strawberry slice or edible flower for Valentine\u2019s touch", her: null },
+          { text: "Pour Sayuri Nigori", her: null },
+          {
+            text: "You did it. Enjoy.",
+            her: null,
+            important: true,
+          },
+        ],
+      },
+    ];
+
+    // --- localStorage helpers ---
+    function loadState() {
+      try {
+        const raw = localStorage.getItem("dinner-state");
+        return raw ? JSON.parse(raw) : null;
+      } catch (e) { return null; }
+    }
+    function saveState(state) {
+      try { localStorage.setItem("dinner-state", JSON.stringify(state)); } catch (e) {}
+    }
+
+    // --- Timer Component ---
+    function Timer({ duration, label }) {
+      const [timeLeft, setTimeLeft] = useState(duration);
+      const [isRunning, setIsRunning] = useState(false);
+      const [hasStarted, setHasStarted] = useState(false);
+
+      useEffect(() => {
+        let interval;
+        if (isRunning && timeLeft > 0) {
+          interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
+        } else if (timeLeft === 0 && isRunning) {
+          setIsRunning(false);
+        }
+        return () => clearInterval(interval);
+      }, [isRunning, timeLeft]);
+
+      const toggle = (e) => {
+        e.stopPropagation();
+        if (!hasStarted) setHasStarted(true);
+        setIsRunning(!isRunning);
+      };
+      const reset = (e) => {
+        e.stopPropagation();
+        setTimeLeft(duration);
+        setIsRunning(false);
+        setHasStarted(false);
+      };
+
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      const progress = hasStarted ? ((duration - timeLeft) / duration) * 100 : 0;
+      const done = timeLeft === 0;
+
+      return React.createElement("div", {
+        style: { marginTop: 10, background: done ? "rgba(198,160,80,0.15)" : "rgba(255,255,255,0.04)", borderRadius: 12, padding: "12px 14px", border: done ? "1px solid rgba(198,160,80,0.4)" : "1px solid rgba(255,255,255,0.08)" }
+      },
+        React.createElement("div", { style: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 } },
+          React.createElement("span", { style: { fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: done ? "#C6A050" : "rgba(255,255,255,0.45)", fontFamily: "'DM Sans', sans-serif" } }, label || "Timer"),
+          React.createElement("span", { style: { fontSize: 26, fontFamily: "'Space Mono', monospace", color: done ? "#C6A050" : "#E8E0D0", fontWeight: 700, letterSpacing: "0.05em" } }, done ? "Done" : `${mins}:${secs.toString().padStart(2, "0")}`)
+        ),
+        React.createElement("div", { style: { height: 3, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden", marginBottom: 10 } },
+          React.createElement("div", { style: { height: "100%", width: `${progress}%`, background: done ? "#C6A050" : "linear-gradient(90deg, #C6A050, #D4AF61)", borderRadius: 2, transition: "width 1s linear" } })
+        ),
+        React.createElement("div", { style: { display: "flex", gap: 8 } },
+          React.createElement("button", {
+            onClick: toggle, disabled: done,
+            style: { flex: 1, padding: "8px 0", borderRadius: 8, border: "none", background: done ? "rgba(255,255,255,0.05)" : isRunning ? "rgba(198,160,80,0.15)" : "rgba(198,160,80,0.25)", color: done ? "rgba(255,255,255,0.25)" : isRunning ? "#C6A050" : "#E8E0D0", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, cursor: done ? "default" : "pointer", letterSpacing: "0.03em" }
+          }, done ? "\u2713 Complete" : isRunning ? "Pause" : hasStarted ? "Resume" : "Start"),
+          hasStarted && React.createElement("button", {
+            onClick: reset,
+            style: { padding: "8px 16px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "transparent", color: "rgba(255,255,255,0.4)", fontFamily: "'DM Sans', sans-serif", fontSize: 13, cursor: "pointer" }
+          }, "Reset")
+        )
+      );
+    }
+
+    // --- Step Card ---
+    function StepCard({ step, index, completed, onToggle, showHer }) {
+      const hasHer = step.her && showHer;
+      return React.createElement("div", {
+        onClick: onToggle,
+        style: { padding: "16px 18px", background: completed ? "rgba(198,160,80,0.06)" : "rgba(255,255,255,0.03)", borderRadius: 14, border: step.important && !completed ? "1px solid rgba(198,160,80,0.25)" : "1px solid rgba(255,255,255,0.06)", marginBottom: 10, cursor: "pointer", transition: "all 0.3s ease", opacity: completed ? 0.55 : 1, animation: "fadeIn 0.3s ease" }
+      },
+        React.createElement("div", { style: { display: "flex", gap: 14, alignItems: "flex-start" } },
+          React.createElement("div", {
+            style: { width: 26, height: 26, borderRadius: 26, border: completed ? "2px solid #C6A050" : "2px solid rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1, background: completed ? "rgba(198,160,80,0.15)" : "transparent", transition: "all 0.3s ease" }
+          },
+            completed && React.createElement("svg", { width: 14, height: 14, viewBox: "0 0 14 14", fill: "none" },
+              React.createElement("path", { d: "M3 7L6 10L11 4", stroke: "#C6A050", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" })
+            )
+          ),
+          React.createElement("div", { style: { flex: 1 } },
+            React.createElement("div", {
+              style: { fontSize: 15, lineHeight: 1.5, color: completed ? "rgba(255,255,255,0.4)" : "#E8E0D0", fontFamily: "'DM Sans', sans-serif", textDecoration: completed ? "line-through" : "none", textDecorationColor: "rgba(255,255,255,0.2)" }
+            }, step.text),
+            step.timer && !completed ? React.createElement(Timer, { duration: step.timer, label: step.timerLabel }) : null,
+            hasHer && !completed ? React.createElement("div", {
+              style: { marginTop: 12, padding: "12px 14px", background: "linear-gradient(135deg, rgba(198,160,80,0.08), rgba(198,160,80,0.04))", borderRadius: 10, borderLeft: "3px solid rgba(198,160,80,0.5)" }
+            },
+              React.createElement("div", { style: { fontSize: 10, letterSpacing: "0.12em", textTransform: "uppercase", color: "#C6A050", marginBottom: 6, fontFamily: "'DM Sans', sans-serif", fontWeight: 700 } }, "Her moment"),
+              React.createElement("div", { style: { fontSize: 14, lineHeight: 1.5, color: "rgba(198,160,80,0.85)", fontFamily: "'DM Sans', sans-serif", fontStyle: "italic" } }, step.her)
+            ) : null
+          )
+        )
+      );
+    }
+
+    // --- Phase Nav ---
+    function PhaseNav({ phases, activePhase, onSelect, completedSteps }) {
+      return React.createElement("div", {
+        style: { display: "flex", gap: 6, overflowX: "auto", padding: "0 20px 12px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none" }
+      },
+        phases.map((phase, i) => {
+          const isActive = i === activePhase;
+          const phaseCompleted = phase.steps.filter((_, si) => completedSteps[`${phase.id}-${si}`]).length;
+          const allDone = phaseCompleted === phase.steps.length;
+          return React.createElement("button", {
+            key: phase.id, onClick: () => onSelect(i),
+            style: { flexShrink: 0, padding: "8px 14px", borderRadius: 20, border: isActive ? "1px solid rgba(198,160,80,0.5)" : "1px solid rgba(255,255,255,0.08)", background: isActive ? "rgba(198,160,80,0.12)" : allDone ? "rgba(198,160,80,0.05)" : "rgba(255,255,255,0.03)", color: isActive ? "#C6A050" : allDone ? "rgba(198,160,80,0.5)" : "rgba(255,255,255,0.4)", fontFamily: "'DM Sans', sans-serif", fontSize: 12, fontWeight: 600, cursor: "pointer", letterSpacing: "0.02em", whiteSpace: "nowrap", transition: "all 0.2s ease" }
+          }, (allDone ? "\u2713 " : "") + (phase.course ? `C${phase.course}` : phase.icon) + " " + phase.title);
+        })
+      );
+    }
+
+    // --- Main App ---
+    function App() {
+      const saved = loadState();
+      const [activePhase, setActivePhase] = useState(saved?.activePhase || 0);
+      const [completedSteps, setCompletedSteps] = useState(saved?.completedSteps || {});
+      const [showHer, setShowHer] = useState(saved?.showHer !== undefined ? saved.showHer : true);
+      const [showIntro, setShowIntro] = useState(saved?.showIntro !== undefined ? saved.showIntro : true);
+
+      const phase = PHASES[activePhase];
+
+      // Save on every change
+      useEffect(() => {
+        saveState({ activePhase, completedSteps, showHer, showIntro });
+      }, [activePhase, completedSteps, showHer, showIntro]);
+
+      const toggleStep = useCallback((stepIndex) => {
+        const key = `${phase.id}-${stepIndex}`;
+        setCompletedSteps(prev => ({ ...prev, [key]: !prev[key] }));
+      }, [phase.id]);
+
+      const resetAll = useCallback(() => {
+        setCompletedSteps({});
+        setActivePhase(0);
+        setShowIntro(true);
+        localStorage.removeItem("dinner-state");
+      }, []);
+
+      const phaseComplete = phase.steps.every((_, i) => completedSteps[`${phase.id}-${i}`]);
+      const totalSteps = PHASES.reduce((sum, p) => sum + p.steps.length, 0);
+      const totalCompleted = Object.values(completedSteps).filter(Boolean).length;
+      const overallProgress = (totalCompleted / totalSteps) * 100;
+
+      // --- Intro Screen ---
+      if (showIntro) {
+        return React.createElement("div", {
+          style: { minHeight: "100vh", background: "linear-gradient(180deg, #1A1814 0%, #0F0E0C 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 32, fontFamily: "'DM Sans', sans-serif" }
+        },
+          React.createElement("div", { style: { width: 64, height: 1, background: "linear-gradient(90deg, transparent, #C6A050, transparent)", marginBottom: 40 } }),
+          React.createElement("div", { style: { fontSize: 11, letterSpacing: "0.25em", textTransform: "uppercase", color: "#C6A050", marginBottom: 20, fontWeight: 600 } }, "Valentine\u2019s Day 2026"),
+          React.createElement("h1", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 42, fontWeight: 300, color: "#E8E0D0", textAlign: "center", lineHeight: 1.2, margin: 0, marginBottom: 8 } }, "Dinner for Two"),
+          React.createElement("div", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 18, fontStyle: "italic", color: "rgba(198,160,80,0.6)", marginBottom: 48 } }, "A three-course guide"),
+          React.createElement("div", { style: { textAlign: "center", marginBottom: 48, maxWidth: 280 } },
+            React.createElement("div", { style: { color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.8, marginBottom: 6 } }, "Suimono \u2014 Clear Dashi Broth"),
+            React.createElement("div", { style: { width: 20, height: 1, background: "rgba(198,160,80,0.3)", margin: "0 auto 6px" } }),
+            React.createElement("div", { style: { color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.8, marginBottom: 6 } }, "Saikyo Miso Black Cod"),
+            React.createElement("div", { style: { width: 20, height: 1, background: "rgba(198,160,80,0.3)", margin: "0 auto 6px" } }),
+            React.createElement("div", { style: { color: "rgba(255,255,255,0.5)", fontSize: 14, lineHeight: 1.8 } }, "Yuzu Posset")
+          ),
+          React.createElement("button", {
+            onClick: () => setShowIntro(false),
+            style: { padding: "16px 48px", borderRadius: 30, border: "1px solid rgba(198,160,80,0.4)", background: "rgba(198,160,80,0.1)", color: "#C6A050", fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", cursor: "pointer", transition: "all 0.3s ease" }
+          }, Object.keys(completedSteps).length > 0 ? "Resume" : "Begin"),
+          Object.keys(completedSteps).length > 0 ? React.createElement("button", {
+            onClick: resetAll,
+            style: { marginTop: 12, padding: "10px 24px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "rgba(255,255,255,0.25)", fontFamily: "'DM Sans', sans-serif", fontSize: 12, cursor: "pointer", letterSpacing: "0.05em" }
+          }, "Start Fresh") : null,
+          React.createElement("div", { style: { width: 64, height: 1, background: "linear-gradient(90deg, transparent, #C6A050, transparent)", marginTop: 40 } })
+        );
+      }
+
+      // --- Main App ---
+      return React.createElement("div", {
+        style: { minHeight: "100vh", background: "linear-gradient(180deg, #1A1814 0%, #0F0E0C 100%)", fontFamily: "'DM Sans', sans-serif", paddingBottom: 100 }
+      },
+        // Header
+        React.createElement("div", { style: { padding: "20px 20px 0" } },
+          React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 } },
+            React.createElement("div", null,
+              React.createElement("div", { style: { fontSize: 10, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(198,160,80,0.5)", marginBottom: 4, fontWeight: 600 } }, "Valentine\u2019s Dinner"),
+              React.createElement("div", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 22, color: "#E8E0D0", fontWeight: 300 } }, phase.course ? `Course ${phase.course}` : phase.title)
+            ),
+            // Her hints toggle
+            React.createElement("div", {
+              onClick: () => setShowHer(!showHer),
+              style: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 20, border: showHer ? "1px solid rgba(198,160,80,0.35)" : "1px solid rgba(255,255,255,0.1)", background: showHer ? "rgba(198,160,80,0.1)" : "rgba(255,255,255,0.03)", cursor: "pointer", transition: "all 0.3s ease" }
+            },
+              React.createElement("div", {
+                style: { width: 32, height: 18, borderRadius: 10, background: showHer ? "rgba(198,160,80,0.4)" : "rgba(255,255,255,0.1)", position: "relative", transition: "all 0.3s ease" }
+              },
+                React.createElement("div", { style: { width: 14, height: 14, borderRadius: 14, background: showHer ? "#C6A050" : "rgba(255,255,255,0.3)", position: "absolute", top: 2, left: showHer ? 16 : 2, transition: "all 0.3s ease" } })
+              ),
+              React.createElement("span", { style: { fontSize: 11, fontWeight: 600, color: showHer ? "#C6A050" : "rgba(255,255,255,0.35)", letterSpacing: "0.04em", whiteSpace: "nowrap" } }, "Expert Mode")
+            )
+          ),
+          // Progress bar
+          React.createElement("div", { style: { height: 2, background: "rgba(255,255,255,0.05)", borderRadius: 1, marginBottom: 14 } },
+            React.createElement("div", { style: { height: "100%", width: `${overallProgress}%`, background: "linear-gradient(90deg, #C6A050, #D4AF61)", borderRadius: 1, transition: "width 0.5s ease" } })
+          )
+        ),
+        // Phase nav
+        React.createElement(PhaseNav, { phases: PHASES, activePhase, onSelect: setActivePhase, completedSteps }),
+        // Phase header
+        React.createElement("div", { style: { padding: "10px 20px 6px" } },
+          React.createElement("div", { style: { display: "flex", alignItems: "baseline", gap: 10, marginBottom: 4 } },
+            React.createElement("span", { style: { fontSize: 20 } }, phase.icon),
+            React.createElement("h2", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 400, color: "#E8E0D0", margin: 0 } }, phase.title)
+          ),
+          React.createElement("div", { style: { fontSize: 14, color: "rgba(255,255,255,0.4)", fontStyle: "italic", fontFamily: "'Cormorant Garamond', serif", marginBottom: 4, paddingLeft: 34 } }, phase.subtitle),
+          React.createElement("div", { style: { fontSize: 11, color: "rgba(198,160,80,0.5)", letterSpacing: "0.08em", textTransform: "uppercase", paddingLeft: 34, marginBottom: 16 } }, phase.time)
+        ),
+        // Steps
+        React.createElement("div", { style: { padding: "0 16px" } },
+          phase.steps.map((step, i) =>
+            React.createElement(StepCard, { key: `${phase.id}-${i}`, step, index: i, completed: !!completedSteps[`${phase.id}-${i}`], onToggle: () => toggleStep(i), showHer })
+          )
+        ),
+        // Next phase button
+        phaseComplete && activePhase < PHASES.length - 1 ? React.createElement("div", { style: { padding: "20px 16px" } },
+          React.createElement("button", {
+            onClick: () => setActivePhase(activePhase + 1),
+            style: { width: "100%", padding: "16px 0", borderRadius: 14, border: "1px solid rgba(198,160,80,0.4)", background: "rgba(198,160,80,0.1)", color: "#C6A050", fontFamily: "'DM Sans', sans-serif", fontSize: 15, fontWeight: 600, letterSpacing: "0.06em", cursor: "pointer", transition: "all 0.3s ease" }
+          }, `Next \u2192 ${PHASES[activePhase + 1].title}`)
+        ) : null,
+        // Final completion
+        phaseComplete && activePhase === PHASES.length - 1 ? React.createElement("div", { style: { padding: "30px 20px", textAlign: "center" } },
+          React.createElement("div", { style: { width: 48, height: 1, background: "linear-gradient(90deg, transparent, #C6A050, transparent)", margin: "0 auto 24px" } }),
+          React.createElement("div", { style: { fontFamily: "'Cormorant Garamond', serif", fontSize: 28, fontWeight: 300, fontStyle: "italic", color: "#C6A050", lineHeight: 1.4 } }, "Beautifully done."),
+          React.createElement("div", { style: { fontSize: 14, color: "rgba(255,255,255,0.35)", marginTop: 8 } }, "Enjoy the rest of your evening."),
+          React.createElement("button", {
+            onClick: resetAll,
+            style: { marginTop: 24, padding: "10px 24px", borderRadius: 20, border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "rgba(255,255,255,0.2)", fontFamily: "'DM Sans', sans-serif", fontSize: 12, cursor: "pointer" }
+          }, "Start Over")
+        ) : null
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
+</body>
+</html>
